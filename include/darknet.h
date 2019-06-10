@@ -651,6 +651,7 @@ void save_image_options(image im, const char *name, IMTYPE f, int quality);
 void get_next_batch(data d, int n, int offset, float *X, float *y);
 void grayscale_image_3c(image im);
 void normalize_image(image p);
+void normalize_image2(image p);
 void matrix_to_csv(matrix m);
 float train_network_sgd(network *net, data d, int n);
 void rgbgr_image(image im);
@@ -744,6 +745,7 @@ int network_height(network *net);
 float *network_predict_image(network *net, image im);
 void network_detect(network *net, image im, float thresh, float hier_thresh, float nms, detection *dets);
 detection *get_network_boxes(network *net, int w, int h, float thresh, float hier, int *map, int relative, int *num);
+void network_predict_images(network *net, image* ims, int num_img, float thresh, float hier_thresh, float nms, int num_classes, detection** dets, int* nboxes);
 void free_detections(detection *dets, int n);
 
 void reset_network_state(network *net, int b);
@@ -798,6 +800,8 @@ int *read_intlist(char *s, int *n, int d);
 size_t rand_size_t();
 float rand_normal();
 float rand_uniform(float min, float max);
+int num_detections(network *net, float thresh);
+int network_outputs(network* net);
 
 #ifdef __cplusplus
 }

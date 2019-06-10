@@ -317,7 +317,7 @@ int get_yolo_detections(layer l, int w, int h, int netw, int neth, float thresh,
 {
     int i,j,n;
     float *predictions = l.output;
-    if (l.batch == 2) avg_flipped_yolo(l);
+    // if (l.batch == 2) avg_flipped_yolo(l);
     int count = 0;
     for (i = 0; i < l.w*l.h; ++i){
         int row = i / l.w;

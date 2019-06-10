@@ -567,6 +567,7 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
 
     image **alphabet = load_alphabet();
     network *net = load_network(cfgfile, weightfile, 0);
+    //printf("datacfg: %s, name_list: %s, cfgfile: %s, weightfile: %s\n", datacfg, name_list, cfgfile, weightfile);
     set_batch_network(net, 1);
     srand(2222222);
     double time;
@@ -585,17 +586,20 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
         }
         image im = load_image_color(input,0,0);
         image sized = letterbox_image(im, net->w, net->h);
+        //save_image(sized, "sized_real");
         //image sized = resize_image(im, net->w, net->h);
         //image sized2 = resize_max(im, net->w);
         //image sized = crop_image(sized2, -((net->w - sized2.w)/2), -((net->h - sized2.h)/2), net->w, net->h);
         //resize_network(net, sized.w, sized.h);
         layer l = net->layers[net->n-1];
+        //printf("the last layer has %d classes\n", l.classes);
 
 
         float *X = sized.data;
         time=what_time_is_it_now();
         network_predict(net, X);
         printf("%s: Predicted in %f seconds.\n", input, what_time_is_it_now()-time);
+        //printf("%s: There are %d detections and %d classes.\n", input, num_detections(net, 0.5), l.classes);
         int nboxes = 0;
         detection *dets = get_network_boxes(net, im.w, im.h, thresh, hier_thresh, 0, 1, &nboxes);
         //printf("%d\n", nboxes);

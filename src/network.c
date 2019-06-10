@@ -585,6 +585,118 @@ float *network_predict_image(network *net, image im)
     return p;
 }
 
+float** store_initial_output(network *net) {
+    int num_output_ptrs = 0;
+    for (int i = 0; i < net->n; i++) {
+        layer *l = &(net->layers[i]);
+        switch (l->type) {
+            case YOLO:
+            case REGION:
+            case DETECTION:
+                num_output_ptrs++;
+            default:
+                break;
+        }
+    }
+
+    float** output_ptrs = calloc(num_output_ptrs, sizeof(float*));
+    int output_idx = 0;
+    for (int i = 0; i < net->n; i++) {
+        layer *l = &(net->layers[i]);
+        switch (l->type) {
+            case YOLO:
+            case REGION:
+            case DETECTION:
+                output_ptrs[output_idx++] = l->output;
+            default:
+                break;
+        }
+    }
+    return output_ptrs;
+}
+
+void reset_network_output(network *net, float** output_ptrs) {
+    int output_idx = 0;
+    for (int i = 0; i < net->n; i++) {
+        layer *l = &(net->layers[i]);
+        switch (l->type) {
+            case YOLO:
+            case REGION:
+            case DETECTION:
+                l->output = output_ptrs[output_idx++];
+            default:
+                break;
+        }
+    }
+
+}
+
+void next_image_output(network *net) {
+    for (int i = 0; i < net->n; i++) {
+        layer *l = &(net->layers[i]);
+        switch (l->type) {
+            case YOLO:
+            case REGION:
+            case DETECTION:
+                l->output += l->outputs;
+            default:
+                break;
+        }
+    }
+}
+
+
+void network_predict_images(network *net, image* ims, int num_img, float thresh, float hier_thresh, float nms, int num_classes, detection** dets, int* nboxes) {
+    int batch_size = net->batch;
+
+    // Letterbox all the images
+    image* letterboxed_ims = malloc(num_img*sizeof(image));
+    for (int i = 0; i < num_img; i++) {
+        letterboxed_ims[i] = letterbox_image(ims[i], net->w, net->h);
+    }
+
+    int img_idx = 0;
+    int img_size = net->w*net->h*3;
+    int img_data_size = batch_size*img_size*sizeof(float);
+
+    // This is used to reset the network output back to the first image of the batch
+    float** output_ptrs_orig = store_initial_output(net);
+
+    // This is the input to the network
+    float* img_data = malloc(img_data_size);
+    while (img_idx < num_img) {
+        memset(img_data, 0, img_data_size);
+        int data_idx;
+        // Copy the letterboxed images into the network input
+        for (data_idx = 0; data_idx < batch_size && data_idx+img_idx < num_img; data_idx++) {
+            memcpy(img_data + (img_size*(data_idx + img_idx)), letterboxed_ims[data_idx+img_idx].data, img_size);
+        }
+
+        // Run the prediction
+        network_predict(net, img_data);
+
+        // Store the detections
+        for (int p = 0; p < data_idx; p++) {
+            dets[img_idx + p] = get_network_boxes(net, ims[0].w, ims[0].h, thresh, hier_thresh, 0, 1, &(nboxes[img_idx + p]));
+            do_nms_sort(dets[img_idx + p], nboxes[img_idx + p], num_classes, nms);
+            // Advance the output ptrs of the network to the next image
+            next_image_output(net);
+        }
+
+        // reset the network output ptrs back to the first image
+        reset_network_output(net, output_ptrs_orig);
+
+        img_idx += data_idx;
+    }
+
+    for (int i = 0; i < num_img; i++) {
+        free_image(letterboxed_ims[i]);
+    }
+    free(letterboxed_ims);
+    free(img_data);
+    free(output_ptrs_orig);
+}
+
 int network_width(network *net){return net->w;}
 int network_height(network *net){return net->h;}
 

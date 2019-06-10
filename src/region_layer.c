@@ -365,29 +365,29 @@ void get_region_detections(layer l, int w, int h, int netw, int neth, float thre
 {
     int i,j,n,z;
     float *predictions = l.output;
-    if (l.batch == 2) {
-        float *flip = l.output + l.outputs;
-        for (j = 0; j < l.h; ++j) {
-            for (i = 0; i < l.w/2; ++i) {
-                for (n = 0; n < l.n; ++n) {
-                    for(z = 0; z < l.classes + l.coords + 1; ++z){
-                        int i1 = z*l.w*l.h*l.n + n*l.w*l.h + j*l.w + i;
-                        int i2 = z*l.w*l.h*l.n + n*l.w*l.h + j*l.w + (l.w - i - 1);
-                        float swap = flip[i1];
-                        flip[i1] = flip[i2];
-                        flip[i2] = swap;
-                        if(z == 0){
-                            flip[i1] = -flip[i1];
-                            flip[i2] = -flip[i2];
-                        }
-                    }
-                }
-            }
-        }
-        for(i = 0; i < l.outputs; ++i){
-            l.output[i] = (l.output[i] + flip[i])/2.;
-        }
-    }
+    // if (l.batch == 2) {
+    //     float *flip = l.output + l.outputs;
+    //     for (j = 0; j < l.h; ++j) {
+    //         for (i = 0; i < l.w/2; ++i) {
+    //             for (n = 0; n < l.n; ++n) {
+    //                 for(z = 0; z < l.classes + l.coords + 1; ++z){
+    //                     int i1 = z*l.w*l.h*l.n + n*l.w*l.h + j*l.w + i;
+    //                     int i2 = z*l.w*l.h*l.n + n*l.w*l.h + j*l.w + (l.w - i - 1);
+    //                     float swap = flip[i1];
+    //                     flip[i1] = flip[i2];
+    //                     flip[i2] = swap;
+    //                     if(z == 0){
+    //                         flip[i1] = -flip[i1];
+    //                         flip[i2] = -flip[i2];
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     for(i = 0; i < l.outputs; ++i){
+    //         l.output[i] = (l.output[i] + flip[i])/2.;
+    //     }
+    // }
     for (i = 0; i < l.w*l.h; ++i){
         int row = i / l.w;
         int col = i % l.w;
